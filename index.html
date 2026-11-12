@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#02040c"><title>Un pensiero per te 💙</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#02040c;color:#fff;font-family:system-ui,-apple-system,Segoe UI,sans-serif}canvas{position:fixed;inset:0;width:100%;height:100%;display:block}.intro{position:fixed;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse at 50% 45%,#102d52 0%,#030711 58%,#02040c 100%);transition:opacity .8s,visibility .8s}.intro.hidden{opacity:0;visibility:hidden;pointer-events:none}.welcome{text-align:center;max-width:360px}.heart{font-size:66px;filter:drop-shadow(0 0 24px #168fff);animation:beat 1.8s infinite}.welcome h1{font-family:Georgia,serif;font-weight:normal;font-size:clamp(27px,7vw,38px);margin:18px 0 10px}.welcome p{color:#bdcce5;line-height:1.6;margin-bottom:28px}button{border:1px solid #78c9ff;background:linear-gradient(135deg,#1b80d5,#2452b6);border-radius:99px;padding:15px 26px;color:white;font-size:16px;font-weight:650;cursor:pointer;box-shadow:0 0 28px #157ed855}button:focus-visible{outline:3px solid white;outline-offset:4px}.controls{position:fixed;bottom:max(18px,env(safe-area-inset-bottom));right:18px;z-index:2;display:none;gap:8px}.controls.visible{display:flex}.controls button{font-size:13px;padding:10px 15px;background:#0b1a33c9;box-shadow:none;border-color:#325c87}@keyframes beat{50%{transform:scale(1.11)}}
+
+.dedication{position:fixed;bottom:82px;left:auto;right:18px;text-align:right;z-index:1;opacity:0;pointer-events:none;transition:opacity 2s;color:#dcecff;font-family:Georgia,serif;font-size:clamp(17px,4vw,24px);text-shadow:0 0 15px #54a8ff}.dedication.show{opacity:1}.photos{position:fixed;inset:0;pointer-events:none;z-index:1}.photo{position:absolute;width:min(23vw,120px);aspect-ratio:3/4;object-fit:cover;border:2px solid #91cfff;border-radius:9px;box-shadow:0 0 25px #207fff70;opacity:0;transition:opacity 2s;filter:saturate(.85)}.photo.show{opacity:.9}.photo.one{top:8%;left:5%;transform:rotate(-9deg)}.photo.two{top:8%;right:5%;transform:rotate(8deg)}.photo.three{bottom:15%;left:5%;transform:rotate(7deg)}.photo.four{bottom:15%;right:5%;transform:rotate(-7deg)}@media(max-width:600px){.photo{width:18vw}.photo.one,.photo.two{top:8%}.photo.three,.photo.four{bottom:18%}.dedication{bottom:76px;right:14px;font-size:15px}}
+</style>
+</head>
+<body>
+<canvas id="scene" aria-label="Un cuore blu luminoso composto dalle parole sei bellissima, con una dedica al centro"></canvas>
+<div class="intro" id="intro"><div class="welcome"><div class="heart">💙</div><h1>Ho una cosa per te…</h1><p>Metti il volume e tocca qui sotto.</p><button id="start">Apri il mio cuore 💙</button></div></div>
+<div class="photos" id="photos" aria-hidden="true"><img class="photo one" src="foto1.jpg" alt="" onerror="this.style.display='none'"><img class="photo two" src="foto2.jpg" alt="" onerror="this.style.display='none'"><img class="photo three" src="foto3.jpg" alt="" onerror="this.style.display='none'"></div>
+<div class="dedication" id="dedication">Ti voglio tanto bene. — Nello 💙</div>
+<div class="controls" id="controls"><button id="sound" aria-label="Attiva o disattiva la musica">🔊 Musica</button><button id="replay">↻ Rivedi</button></div>
+<audio id="music" src="canzone.mp3" preload="auto" loop></audio>
+<script>
+(()=>{'use strict';
+const canvas=document.getElementById('scene'),ctx=canvas.getContext('2d'),music=document.getElementById('music');
+const colors=['#4682b4','#1e90ff','#00bfff','#6495ed','#4169e1'];
+let w=0,h=0,dpr=1,particles=[],startTime=0,running=false,animationId=0,centerStart=0;const photos=[...document.querySelectorAll(".photo")],dedication=document.getElementById("dedication");
+const rand=(a,b)=>a+Math.random()*(b-a);
+function heart(t){return [16*Math.sin(t)**3,-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t))]}
+function particle(x,y,order,kind){return {x,y,order,kind,color:colors[Math.floor(Math.random()*colors.length)],size:rand(.85,1.15),phase:rand(0,Math.PI*2)}}
+function build(){
+ const outline=[],fill=[],placed=[];
+ for(let i=0;i<160;i++){const [x,y]=heart(i/160*Math.PI*2);if(placed.some(p=>Math.hypot(x-p[0],y-p[1])<1.5))continue;placed.push([x,y]);outline.push(particle(x,y,i,'outline'))}
+ const inner=[];let attempts=0;
+ while(fill.length<130&&attempts++<10400){const [x,y]=heart(rand(0,Math.PI*2)),r=rand(0,.86),px=x*r,py=y*r;if(inner.some(p=>Math.hypot(px-p[0],py-p[1])<2.3))continue;inner.push([px,py]);fill.push(particle(px,py,Math.floor(rand(0,321)),'fill'))}
+ const fillStart=Math.max(...outline.map(p=>p.order))*1.6+30;
+ particles=[...outline.map(p=>({...p,delay:p.order*1.6})),...fill.map(p=>({...p,delay:fillStart+p.order}))];centerStart=fillStart+200;
+}
+function resize(){w=innerWidth;h=innerHeight;dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0)}
+function draw(time){if(!running)return;const frame=(time-startTime)/1000*60;ctx.clearRect(0,0,w,h);ctx.fillStyle='#02040c';ctx.fillRect(0,0,w,h);
+ // Keep the complete heart inside narrow portrait screens.
+ const scale=Math.min(w/43,h/40),cx=w/2,cy=h/2;
+ for(const p of particles){if(frame<p.delay)continue;const fade=Math.min(1,(frame-p.delay)/19),flick=.75+.25*Math.sin(frame*.04+p.phase),alpha=fade*flick;
+ const x=cx+p.x*scale,y=cy+p.y*scale;const size=Math.max(8,Math.min(20,scale*.98))*(p.kind==='outline'?1:.85)*p.size;
+ ctx.save();ctx.globalAlpha=alpha;ctx.font=`700 ${size}px Arial, sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.shadowColor=p.color;ctx.shadowBlur=Math.max(8,size*1.3);ctx.fillStyle=p.color;ctx.fillText('sei bellissima',x,y);ctx.shadowBlur=Math.max(4,size*.55);ctx.fillText('sei bellissima',x,y);ctx.restore();}
+ photos.forEach((el,i)=>el.classList.toggle('show',frame>centerStart+100+i*70));dedication.classList.toggle('show',frame>centerStart+380);
+ if(frame>centerStart){const fade=Math.min(1,(frame-centerStart)/60),pulse=1+.025*Math.sin(frame*.05),fontSize=Math.min(37,w/13,h/21)*pulse;ctx.save();ctx.globalAlpha=fade;ctx.font=`700 ${fontSize}px Georgia, serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.shadowColor='#83c9ff';ctx.shadowBlur=25;ctx.fillStyle='#fffaf5';ctx.fillText('In ogni caso,',cx,cy-fontSize*.55);ctx.fillText('ne varrà la pena.',cx,cy+fontSize*.65);ctx.restore()}
+ animationId=requestAnimationFrame(draw)}
+function play(){cancelAnimationFrame(animationId);photos.forEach(el=>el.classList.remove('show'));dedication.classList.remove('show');build();startTime=performance.now();running=true;animationId=requestAnimationFrame(draw)}
+window.addEventListener('resize',resize);resize();
+document.getElementById('start').addEventListener('click',()=>{document.getElementById('intro').classList.add('hidden');document.getElementById('controls').classList.add('visible');music.play().catch(()=>{document.getElementById('sound').textContent='🔇 Musica'});play()});
+document.getElementById('replay').addEventListener('click',()=>{music.currentTime=0;music.play().catch(()=>{});play()});
+document.getElementById('sound').addEventListener('click',async e=>{if(music.paused){try{await music.play();e.currentTarget.textContent='🔊 Musica'}catch{e.currentTarget.textContent='🔇 Musica'}}else{music.pause();e.currentTarget.textContent='🔇 Musica'}});
+})();
+</script></body></html>
