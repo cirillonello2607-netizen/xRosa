@@ -43,9 +43,13 @@ function draw(time){if(!running)return;const frame=(time-startTime)/1000*60;ctx.
  if(frame>centerStart){const fade=Math.min(1,(frame-centerStart)/60),pulse=1+.025*Math.sin(frame*.05),fontSize=Math.min(37,w/13,h/21)*pulse;ctx.save();ctx.globalAlpha=fade;ctx.font=`700 ${fontSize}px Georgia, serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.shadowColor='#ff9bce';ctx.shadowBlur=25;ctx.fillStyle='#fffaf5';ctx.fillText('In ogni caso,',cx,cy-fontSize*.55);ctx.fillText('ne varrà la pena',cx,cy+fontSize*.65);ctx.restore()}
  animationId=requestAnimationFrame(draw)}
 function play(){cancelAnimationFrame(animationId);photos.forEach(el=>el.classList.remove('show'));dedication.classList.remove('show');build();startTime=performance.now();running=true;animationId=requestAnimationFrame(draw)}
+let musicWanted=false;
+function startMusic(){musicWanted=true;music.play().then(()=>{document.getElementById('sound').textContent='🔊 Musica'}).catch(()=>{document.getElementById('sound').textContent='🔇 Musica'})}
+music.addEventListener('pause',()=>{if(musicWanted&&!music.ended){music.play().catch(()=>{document.getElementById('sound').textContent='🔇 Musica'})}});
+music.addEventListener('stalled',()=>{if(musicWanted)music.load(),music.play().catch(()=>{})});
 window.addEventListener('resize',resize);resize();
-document.getElementById('start').addEventListener('click',()=>{document.getElementById('intro').classList.add('hidden');document.getElementById('controls').classList.add('visible');music.play().catch(()=>{document.getElementById('sound').textContent='🔇 Musica'});play()});
-document.getElementById('replay').addEventListener('click',()=>{music.currentTime=0;music.play().catch(()=>{});play()});
-document.getElementById('sound').addEventListener('click',async e=>{if(music.paused){try{await music.play();e.currentTarget.textContent='🔊 Musica'}catch{e.currentTarget.textContent='🔇 Musica'}}else{music.pause();e.currentTarget.textContent='🔇 Musica'}});
+document.getElementById('start').addEventListener('click',()=>{document.getElementById('intro').classList.add('hidden');document.getElementById('controls').classList.add('visible');startMusic();play()});
+document.getElementById('replay').addEventListener('click',()=>{music.currentTime=0;startMusic();play()});
+document.getElementById('sound').addEventListener('click',async e=>{if(music.paused){startMusic()}else{musicWanted=false;music.pause();e.currentTarget.textContent='🔇 Musica'}});
 })();
 </script></body></html>
